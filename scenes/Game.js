@@ -240,22 +240,16 @@ export default class Game extends Phaser.Scene {
     this.physics.pause();
     this.time.removeAllEvents();
     this.player.anims.stop();
-    this.sound.play(gano ? "ganar" : "perder");
 
-    const { width, height } = this.scale;
-    this.add.rectangle(0, 0, width, height, 0x1d1b2e, 0.6).setOrigin(0).setDepth(20);
-    texto(this, width / 2, height / 2 - 30, gano ? "¡GANASTE!" : "PERDISTE", {
-      fontSize: "72px",
-      color: gano ? "#ffd93b" : "#ff6b6b",
-      strokeThickness: 10,
-    })
-      .setOrigin(0.5)
-      .setDepth(20);
-    texto(this, width / 2, height / 2 + 60, `${motivo}\nPuntaje: ${this.score}\nPresioná R para volver a jugar`, {
-      fontSize: "20px",
-      align: "center",
-    })
-      .setOrigin(0.5)
-      .setDepth(20);
+    // escena unica de fin de juego (Mejora 6)
+    this.time.delayedCall(700, () => {
+      this.scene.start("gameover", {
+        gano,
+        motivo,
+        puntaje: this.score,
+        conteo: this.contarRecolectados(),
+        figuras: this.figurasBuenas,
+      });
+    });
   }
 }
