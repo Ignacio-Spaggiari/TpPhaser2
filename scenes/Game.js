@@ -2,7 +2,8 @@
 import { texto } from "./ui.js";
 
 const TIEMPO_PARTIDA = 60; // segundos (Mejora 1)
-const INTERVALO_CAIDA = 1000; // ms entre cada figura
+const INTERVALO_CAIDA = 500; // ms entre cada figura (Mejora 3)
+const DESCUENTO_REBOTE = 5; // puntos que pierde una figura en cada rebote (Mejora 3)
 const PUNTAJE_PARA_GANAR = 100; // hay que superarlo (Mejora 2)
 const MINIMO_POR_TIPO = 2;
 
@@ -55,7 +56,7 @@ export default class Game extends Phaser.Scene {
     this.physics.add.collider(this.player, platformLayer);
 
     this.items = this.physics.add.group();
-    this.physics.add.collider(this.items, platformLayer);
+    this.physics.add.collider(this.items, platformLayer, this.reboteItem, null, this);
     this.physics.add.overlap(this.player, this.items, this.recolectarItem, null, this);
 
     // Pasado un segundo empiezan a caer figuras (GDD 6.1)
@@ -91,6 +92,12 @@ export default class Game extends Phaser.Scene {
       this.player.setVelocityY(-380);
       this.sound.play("salto", { volume: 0.4 });
     }
+
+    this.items.children.iterate((item) => {
+      // cuando deja de tocar el piso, el proximo contacto cuenta como un nuevo rebote
+      if (!item.body.blocked.down) item.setData("puedeRebotar", true);
+      item.etiqueta.setPosition(item.x, item.y - 20);
+    });
   }
 
   crearHud() {
@@ -121,11 +128,47 @@ export default class Game extends Phaser.Scene {
     const y = Phaser.Math.Between(this.zonaCaida.y, this.zonaCaida.y + this.zonaCaida.height);
 
     const item = this.items.create(x, y, "tiles", fig.frame);
-    item.setData({ tipo: fig.tipo, puntos: fig.puntos, color: fig.color });
+    item.setData({ tipo: fig.tipo, puntos: fig.puntos, color: fig.color, puedeRebotar: true });
     item.setBounce(1, 0.75);
     item.setCollideWorldBounds(true);
     item.setVelocityX(Phaser.Math.Between(-60, 60));
     item.setAngularVelocity(Phaser.Math.Between(-90, 90));
+
+    // texto con el valor actual de la figura
+    item.etiqueta = texto(this, x, y - 20, fig.puntos, {
+      fontSize: "12px",
+      color: fig.color,
+      strokeThickness: 3,
+    }).setOrigin(0.5);
+    item.on("destroy", () => item.etiqueta.destroy());
+  }
+
+  reboteItem(item) {
+    if (!item.body.blocked.down || !item.getData("puedeRebotar")) return;
+    item.setData("puedeRebotar", false);
+
+    // en cada rebote la figura vale 5 puntos menos
+    const nuevos = item.getData("puntos") - DESCUENTO_REBOTE;
+    item.setData("puntos", nuevos);
+    item.etiqueta.setText(nuevos);
+
+    if (nuevos <= 0) {
+      this.desaparecerItem(item);
+    } else {
+      this.sound.play("rebote", { volume: 0.25 });
+    }
+  }
+
+  desaparecerItem(item) {
+    item.disableBody(true, false);
+    item.etiqueta.setVisible(false);
+    this.tweens.add({
+      targets: item,
+      alpha: 0,
+      scale: 0.2,
+      duration: 200,
+      onComplete: () => item.destroy(),
+    });
   }
 
   recolectarItem(player, item) {
