@@ -7,8 +7,8 @@ Enkei Kiiro, el último guerrero del clan ninja Moncho, debe defender su pueblo 
 ## Cómo jugar
 
 - `←` `→` moverse, `↑` saltar, `R` reiniciar.
-- Cada segundo cae un cuadrado, un triángulo o un rombo al azar.
-- **Ganás** cuando juntás al menos 2 figuras de cada tipo.
+- Cada segundo cae al azar un cuadrado (10 pts), un triángulo (15 pts) o un rombo (20 pts).
+- **Ganás** si superás los 100 puntos habiendo juntado al menos 2 figuras de cada tipo.
 - **Perdés** si se terminan los 60 segundos.
 
 ## Cómo correrlo
@@ -27,5 +27,5 @@ Abrir `index.html` con un servidor local (por ejemplo Live Server de VS Code, pu
 ## Uso de Tiled
 
 - Las plataformas colisionan por la propiedad `esColisionable` de sus tiles.
-- Las figuras que caen son tiles del tileset con las propiedades `tipo` y `color`.
+- Las figuras que caen son tiles del tileset con las propiedades `tipo`, `puntos` y `color`: cambiando esos valores en Tiled cambian los puntajes del juego.
 - En la capa de objetos `Objetos` están el punto de aparición del jugador (`player`) y el rectángulo desde donde caen las figuras (`zonaCaida`).

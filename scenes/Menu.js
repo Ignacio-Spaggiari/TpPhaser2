@@ -28,7 +28,7 @@ export default class Menu extends Phaser.Scene {
       width / 2,
       440,
       "← → moverse    ↑ saltar\n" +
-        "Juntá al menos 2 figuras de cada tipo\n" +
+        "Superá los 100 puntos juntando al menos 2 de cada figura\n" +
         "antes de que se acabe el tiempo.",
       { fontSize: "16px", align: "center", strokeThickness: 4, lineSpacing: 6 }
     ).setOrigin(0.5);

@@ -453,9 +453,9 @@ for (let x = 0; x < ANCHO; x++) {
 
 const prop = (name, type, value) => ({ name, type, value });
 const colisionable = [16, 17, 18, 19, 20, 21, 22, 23].map((id) => ({ id, properties: [prop("esColisionable", "bool", true)] }));
-const figura = (id, tipo, color) => ({
+const figura = (id, tipo, puntos, color) => ({
   id,
-  properties: [prop("color", "string", color), prop("tipo", "string", tipo)],
+  properties: [prop("color", "string", color), prop("puntos", "int", puntos), prop("tipo", "string", tipo)],
 });
 
 const capaTiles = (id, name, data) => ({ data, height: ALTO, id, name, opacity: 1, type: "tilelayer", visible: true, width: ANCHO, x: 0, y: 0 });
@@ -504,9 +504,9 @@ const mapa = {
       tileheight: T,
       tiles: [
         ...colisionable,
-        figura(24, "cuadrado", "#3fa7f5"),
-        figura(25, "triangulo", "#5ad15a"),
-        figura(26, "rombo", "#ffc93c"),
+        figura(24, "cuadrado", 10, "#3fa7f5"),
+        figura(25, "triangulo", 15, "#5ad15a"),
+        figura(26, "rombo", 20, "#ffc93c"),
       ],
       tilewidth: T,
     },

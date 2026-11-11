@@ -3,6 +3,7 @@ import { texto } from "./ui.js";
 
 const TIEMPO_PARTIDA = 60; // segundos (Mejora 1)
 const INTERVALO_CAIDA = 1000; // ms entre cada figura
+const PUNTAJE_PARA_GANAR = 100; // hay que superarlo (Mejora 2)
 const MINIMO_POR_TIPO = 2;
 
 export default class Game extends Phaser.Scene {
@@ -11,6 +12,7 @@ export default class Game extends Phaser.Scene {
   }
 
   init() {
+    this.score = 0;
     this.tiempoRestante = TIEMPO_PARTIDA;
     // cada figura recolectada se guarda en este array
     this.recolectados = [];
@@ -30,7 +32,7 @@ export default class Game extends Phaser.Scene {
     map.createLayer("Decoracion", tileset, 0, 0);
     const platformLayer = map.createLayer("Plataformas", tileset, 0, 0);
 
-    // Las figuras se definen en Tiled como tiles del tileset con las propiedades "tipo" y "color"
+    // Las figuras se definen en Tiled como tiles del tileset con las propiedades "tipo", "puntos" y "color"
     this.figuras = Object.entries(tileset.tileProperties)
       .filter(([, props]) => props.tipo)
       .map(([id, props]) => ({ frame: Number(id), ...props }));
@@ -96,6 +98,7 @@ export default class Game extends Phaser.Scene {
 
     // franja de fondo para que las figuras que caen no tapen el HUD
     this.add.rectangle(0, 0, width, 56, 0x1d1b2e, 0.6).setOrigin(0).setDepth(10);
+    this.scoreText = texto(this, 16, 12, `Puntos: ${this.score}`).setDepth(10);
     this.timerText = texto(this, width - 16, 12, `⏱ ${this.tiempoRestante}`).setOrigin(1, 0).setDepth(10);
 
     // contador de cada figura que hace falta para ganar
@@ -118,7 +121,7 @@ export default class Game extends Phaser.Scene {
     const y = Phaser.Math.Between(this.zonaCaida.y, this.zonaCaida.y + this.zonaCaida.height);
 
     const item = this.items.create(x, y, "tiles", fig.frame);
-    item.setData({ tipo: fig.tipo, color: fig.color });
+    item.setData({ tipo: fig.tipo, puntos: fig.puntos, color: fig.color });
     item.setBounce(1, 0.75);
     item.setCollideWorldBounds(true);
     item.setVelocityX(Phaser.Math.Between(-60, 60));
@@ -126,12 +129,23 @@ export default class Game extends Phaser.Scene {
   }
 
   recolectarItem(player, item) {
+    const puntos = item.getData("puntos");
+
     this.recolectados.push(item.getData("tipo"));
+    this.score += puntos;
+    this.scoreText.setText(`Puntos: ${this.score}`);
     this.sound.play("recolectar", { volume: 0.6 });
+
+    this.textoFlotante(item.x, item.y, `+${puntos}`, item.getData("color"));
     item.destroy();
 
     this.actualizarContadores();
     this.verificarVictoria();
+  }
+
+  textoFlotante(x, y, contenido, color) {
+    const t = texto(this, x, y, contenido, { fontSize: "20px", color, strokeThickness: 4 }).setOrigin(0.5);
+    this.tweens.add({ targets: t, y: y - 40, alpha: 0, duration: 700, onComplete: () => t.destroy() });
   }
 
   contarRecolectados() {
@@ -154,7 +168,7 @@ export default class Game extends Phaser.Scene {
     const conteo = this.contarRecolectados();
     const tieneTodasLasFiguras = this.figuras.every(({ tipo }) => (conteo[tipo] ?? 0) >= MINIMO_POR_TIPO);
 
-    if (tieneTodasLasFiguras) {
+    if (tieneTodasLasFiguras && this.score > PUNTAJE_PARA_GANAR) {
       this.terminar(true);
     }
   }
@@ -189,7 +203,10 @@ export default class Game extends Phaser.Scene {
     })
       .setOrigin(0.5)
       .setDepth(20);
-    texto(this, width / 2, height / 2 + 50, `${motivo}\nPresioná R para volver a jugar`, { fontSize: "20px", align: "center" })
+    texto(this, width / 2, height / 2 + 60, `${motivo}\nPuntaje: ${this.score}\nPresioná R para volver a jugar`, {
+      fontSize: "20px",
+      align: "center",
+    })
       .setOrigin(0.5)
       .setDepth(20);
   }

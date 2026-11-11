@@ -3799,6 +3799,11 @@
        "value": "#3fa7f5"
       },
       {
+       "name": "puntos",
+       "type": "int",
+       "value": 10
+      },
+      {
        "name": "tipo",
        "type": "string",
        "value": "cuadrado"
@@ -3814,6 +3819,11 @@
        "value": "#5ad15a"
       },
       {
+       "name": "puntos",
+       "type": "int",
+       "value": 15
+      },
+      {
        "name": "tipo",
        "type": "string",
        "value": "triangulo"
@@ -3827,6 +3837,11 @@
        "name": "color",
        "type": "string",
        "value": "#ffc93c"
+      },
+      {
+       "name": "puntos",
+       "type": "int",
+       "value": 20
       },
       {
        "name": "tipo",
