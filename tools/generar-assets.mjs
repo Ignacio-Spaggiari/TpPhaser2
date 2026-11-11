@@ -444,12 +444,21 @@ for (const x of [1, 6, 22, 27]) {
 for (const x of [3, 9, 17, 25]) poner(deco, x, 27, 14);
 for (const x of [12, 19]) poner(deco, x, 27, 15);
 
-// Plataformas: piso inferior
+// Plataformas: piso inferior + plataformas extra (Mejora 4)
 const plataformas = vacia();
 for (let x = 0; x < ANCHO; x++) {
   poner(plataformas, x, 28, x === 0 ? 16 : x === ANCHO - 1 ? 18 : 17);
   poner(plataformas, x, 29, 19);
 }
+const tabla = (x, y, largo) => {
+  for (let i = 0; i < largo; i++) poner(plataformas, x + i, y, i === 0 ? 20 : i === largo - 1 ? 22 : 21);
+};
+tabla(3, 23, 6);
+tabla(21, 23, 6);
+tabla(11, 18, 8);
+tabla(1, 13, 6);
+tabla(23, 13, 6);
+tabla(12, 8, 6);
 
 const prop = (name, type, value) => ({ name, type, value });
 const colisionable = [16, 17, 18, 19, 20, 21, 22, 23].map((id) => ({ id, properties: [prop("esColisionable", "bool", true)] }));

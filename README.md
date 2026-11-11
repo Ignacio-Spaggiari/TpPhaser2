@@ -27,6 +27,6 @@ Abrir `index.html` con un servidor local (por ejemplo Live Server de VS Code, pu
 
 ## Uso de Tiled
 
-- Las plataformas colisionan por la propiedad `esColisionable` de sus tiles.
+- La capa `Plataformas` tiene el piso y seis plataformas de madera; colisionan por la propiedad `esColisionable` de sus tiles.
 - Las figuras que caen son tiles del tileset con las propiedades `tipo`, `puntos` y `color`: cambiando esos valores en Tiled cambian los puntajes del juego.
 - En la capa de objetos `Objetos` están el punto de aparición del jugador (`player`) y el rectángulo desde donde caen las figuras (`zonaCaida`).
