@@ -1,4 +1,8 @@
 // URL to explain PHASER scene: https://rexrainbow.github.io/phaser3-rex-notes/docs/site/scene/
+import { texto } from "./ui.js";
+
+const INTERVALO_CAIDA = 1000; // ms entre cada figura
+const MINIMO_POR_TIPO = 2;
 
 export default class Game extends Phaser.Scene {
   constructor() {
@@ -6,18 +10,9 @@ export default class Game extends Phaser.Scene {
   }
 
   init() {
-    this.score = 0;
-  }
-
-  preload() {
-    this.load.tilemapTiledJSON("map", "public/assets/tilemap/map.json");
-    this.load.image("tileset", "public/assets/texture.png");
-    this.load.image("star", "public/assets/star.png");
-
-    this.load.spritesheet("dude", "./public/assets/dude.png", {
-      frameWidth: 32,
-      frameHeight: 48,
-    });
+    // cada figura recolectada se guarda en este array
+    this.recolectados = [];
+    this.terminado = false;
   }
 
   create() {
@@ -28,41 +23,26 @@ export default class Game extends Phaser.Scene {
     const tileset = map.addTilesetImage("tileset", "tileset");
 
     // Parameters: layer name (or index) from Tiled, tileset, x, y
-    const belowLayer = map.createLayer("Fondo", tileset, 0, 0);
+    map.createLayer("Fondo", tileset, 0, 0);
+    map.createLayer("Montanas", tileset, 0, 0);
+    map.createLayer("Decoracion", tileset, 0, 0);
     const platformLayer = map.createLayer("Plataformas", tileset, 0, 0);
-    const objectsLayer = map.getObjectLayer("Objetos");
 
-    // Find in the Object Layer, the name "dude" and get position
-    const spawnPoint = map.findObject(
-      "Objetos",
-      (obj) => obj.name === "player"
-    );
-    console.log("spawnPoint", spawnPoint);
+    // Las figuras se definen en Tiled como tiles del tileset con las propiedades "tipo" y "color"
+    this.figuras = Object.entries(tileset.tileProperties)
+      .filter(([, props]) => props.tipo)
+      .map(([id, props]) => ({ frame: Number(id), ...props }));
 
-    this.player = this.physics.add.sprite(spawnPoint.x, spawnPoint.y, "dude");
+    // Find in the Object Layer, the name "player" and get position
+    const spawnPoint = map.findObject("Objetos", (obj) => obj.name === "player");
+    this.zonaCaida = map.findObject("Objetos", (obj) => obj.name === "zonaCaida");
 
-    this.player.setBounce(0.2);
+    this.player = this.physics.add.sprite(spawnPoint.x, spawnPoint.y, "ninja", 4);
+    this.player.setSize(22, 26).setOffset(5, 5);
     this.player.setCollideWorldBounds(true);
 
-    this.anims.create({
-      key: "left",
-      frames: this.anims.generateFrameNumbers("dude", { start: 0, end: 3 }),
-      frameRate: 10,
-      repeat: -1,
-    });
-
-    this.anims.create({
-      key: "turn",
-      frames: [{ key: "dude", frame: 4 }],
-      frameRate: 20,
-    });
-
-    this.anims.create({
-      key: "right",
-      frames: this.anims.generateFrameNumbers("dude", { start: 5, end: 8 }),
-      frameRate: 10,
-      repeat: -1,
-    });
+    // las figuras caen desde arriba de la pantalla, asi que el borde superior no colisiona
+    this.physics.world.setBoundsCollision(true, true, false, true);
 
     this.cursors = this.input.keyboard.createCursorKeys();
     this.keyR = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
@@ -70,89 +50,130 @@ export default class Game extends Phaser.Scene {
     platformLayer.setCollisionByProperty({ esColisionable: true });
     this.physics.add.collider(this.player, platformLayer);
 
-    // tiles marked as colliding
-    /*
-    const debugGraphics = this.add.graphics().setAlpha(0.75);
-    platformLayer.renderDebug(debugGraphics, {
-      tileColor: null, // Color of non-colliding tiles
-      collidingTileColor: new Phaser.Display.Color(243, 134, 48, 255), // Color of colliding tiles
-      faceColor: new Phaser.Display.Color(40, 39, 37, 255), // Color of colliding face edges
-    });
-    */
+    this.items = this.physics.add.group();
+    this.physics.add.collider(this.items, platformLayer);
+    this.physics.add.overlap(this.player, this.items, this.recolectarItem, null, this);
 
-    // Create empty group of starts
-    this.stars = this.physics.add.group();
-
-    // find object layer
-    // if type is "stars", add to stars group
-    objectsLayer.objects.forEach((objData) => {
-      console.log(objData);
-      const { x = 0, y = 0, name, type } = objData;
-      switch (type) {
-        case "star": {
-          // add star to scene
-          // console.log("estrella agregada: ", x, y);
-          const star = this.stars.create(x, y, "star");
-          star.setBounceY(Phaser.Math.FloatBetween(0.4, 0.8));
-          break;
-        }
-      }
+    // Pasado un segundo empiezan a caer figuras (GDD 6.1)
+    this.time.delayedCall(1000, () => {
+      this.time.addEvent({ delay: INTERVALO_CAIDA, loop: true, callback: this.crearItem, callbackScope: this });
     });
 
-    // add collision between player and stars
-    this.physics.add.collider(
-      this.player,
-      this.stars,
-      this.collectStar,
-      null,
-      this
-    );
-    // add overlap between stars and platform layer
-    this.physics.add.collider(this.stars, platformLayer);
-
-    this.scoreText = this.add.text(16, 16, `Score: ${this.score}`, {
-      fontSize: "32px",
-      fill: "#000",
-    });
+    this.crearHud();
   }
 
   update() {
-    // update game objects
-    if (this.cursors.left.isDown) {
-      this.player.setVelocityX(-160);
+    if (Phaser.Input.Keyboard.JustDown(this.keyR)) {
+      this.scene.restart();
+    }
 
+    if (this.terminado) return;
+
+    if (this.cursors.left.isDown) {
+      this.player.setVelocityX(-200);
       this.player.anims.play("left", true);
     } else if (this.cursors.right.isDown) {
-      this.player.setVelocityX(160);
-
+      this.player.setVelocityX(200);
       this.player.anims.play("right", true);
     } else {
       this.player.setVelocityX(0);
-
       this.player.anims.play("turn");
     }
 
-    if (this.cursors.up.isDown) {
-      this.player.setVelocityY(-330);
-    }
-
-    if (Phaser.Input.Keyboard.JustDown(this.keyR)) {
-      console.log("Phaser.Input.Keyboard.JustDown(this.keyR)");
-      this.scene.restart();
+    // solo puede saltar si esta apoyado
+    if (this.cursors.up.isDown && this.player.body.blocked.down) {
+      this.player.setVelocityY(-380);
+      this.sound.play("salto", { volume: 0.4 });
     }
   }
 
-  collectStar(player, star) {
-    star.disableBody(true, true);
+  crearHud() {
+    const { width } = this.scale;
 
-    this.score += 10;
-    this.scoreText.setText(`Score: ${this.score}`);
+    // franja de fondo para que las figuras que caen no tapen el HUD
+    this.add.rectangle(0, 0, width, 56, 0x1d1b2e, 0.6).setOrigin(0).setDepth(10);
 
-    if (this.stars.countActive(true) === 0) {
-      //  A new batch of stars to collect
-      this.stars.children.iterate(function (child) {
-        child.enableBody(true, child.x, 0, true, true);
-      });
+    // contador de cada figura que hace falta para ganar
+    this.contadores = {};
+    this.figuras.forEach((fig, i) => {
+      const x = width / 2 - 90 + i * 80;
+      this.add.image(x, 28, "tiles", fig.frame).setDepth(10);
+      this.contadores[fig.tipo] = texto(this, x + 16, 28, `0/${MINIMO_POR_TIPO}`, {
+        fontSize: "16px",
+        strokeThickness: 4,
+      })
+        .setOrigin(0, 0.5)
+        .setDepth(10);
+    });
+  }
+
+  crearItem() {
+    const fig = Phaser.Utils.Array.GetRandom(this.figuras);
+    const x = Phaser.Math.Between(this.zonaCaida.x, this.zonaCaida.x + this.zonaCaida.width);
+    const y = Phaser.Math.Between(this.zonaCaida.y, this.zonaCaida.y + this.zonaCaida.height);
+
+    const item = this.items.create(x, y, "tiles", fig.frame);
+    item.setData({ tipo: fig.tipo, color: fig.color });
+    item.setBounce(1, 0.75);
+    item.setCollideWorldBounds(true);
+    item.setVelocityX(Phaser.Math.Between(-60, 60));
+    item.setAngularVelocity(Phaser.Math.Between(-90, 90));
+  }
+
+  recolectarItem(player, item) {
+    this.recolectados.push(item.getData("tipo"));
+    this.sound.play("recolectar", { volume: 0.6 });
+    item.destroy();
+
+    this.actualizarContadores();
+    this.verificarVictoria();
+  }
+
+  contarRecolectados() {
+    const conteo = {};
+    this.recolectados.forEach((tipo) => (conteo[tipo] = (conteo[tipo] ?? 0) + 1));
+    return conteo;
+  }
+
+  actualizarContadores() {
+    const conteo = this.contarRecolectados();
+    this.figuras.forEach(({ tipo }) => {
+      const cantidad = conteo[tipo] ?? 0;
+      this.contadores[tipo].setText(`${cantidad}/${MINIMO_POR_TIPO}`);
+      this.contadores[tipo].setColor(cantidad >= MINIMO_POR_TIPO ? "#7dff7d" : "#ffffff");
+    });
+  }
+
+  // Se verifica cada vez que se recolecta una figura
+  verificarVictoria() {
+    const conteo = this.contarRecolectados();
+    const tieneTodasLasFiguras = this.figuras.every(({ tipo }) => (conteo[tipo] ?? 0) >= MINIMO_POR_TIPO);
+
+    if (tieneTodasLasFiguras) {
+      this.terminar(true);
     }
+  }
+
+  terminar(gano) {
+    if (this.terminado) return;
+    this.terminado = true;
+
+    this.physics.pause();
+    this.time.removeAllEvents();
+    this.player.anims.stop();
+    this.sound.play(gano ? "ganar" : "perder");
+
+    const { width, height } = this.scale;
+    this.add.rectangle(0, 0, width, height, 0x1d1b2e, 0.6).setOrigin(0).setDepth(20);
+    texto(this, width / 2, height / 2 - 30, gano ? "¡GANASTE!" : "PERDISTE", {
+      fontSize: "72px",
+      color: gano ? "#ffd93b" : "#ff6b6b",
+      strokeThickness: 10,
+    })
+      .setOrigin(0.5)
+      .setDepth(20);
+    texto(this, width / 2, height / 2 + 50, "Presioná R para volver a jugar", { fontSize: "20px" })
+      .setOrigin(0.5)
+      .setDepth(20);
   }
 }

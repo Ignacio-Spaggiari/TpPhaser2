@@ -1,18 +1,30 @@
-# Phaser 3 Template
+# Ninja Moncho
 
-Plantilla para iniciar nuevos proyectos con PHASER 3.
+Trabajo Práctico Módulo #1 — Programación 1 (UNRaf). Propuesta 1, hecho con Phaser 3 (sin Vite) y mapas de Tiled.
 
-Contiene configuración inicial y buenas prácticas de estructuras de carpetas.
+Enkei Kiiro, el último guerrero del clan ninja Moncho, debe defender su pueblo de una lluvia de asteroides geométricos.
 
-## Cuando lo utilices
+## Cómo jugar
 
-No te olvides de customizarlo a tus necesidades.
+- `←` `→` moverse, `↑` saltar, `R` reiniciar.
+- Cada segundo cae un cuadrado, un triángulo o un rombo al azar.
+- **Ganás** cuando juntás al menos 2 figuras de cada tipo.
 
-1. Cuando lo utilices como Template desde el botón de GitHub, no olvides cambiar el nombre del repositorio acorde a tu proyecto en el wizard de creación de repositorios.
-1. Luego de clonar el repositorio en tu maquina local. Deberias:
-   1. Actualizar la version de Phaser a la version más actualizada en el archivo `index.html`. Ver la web: https://phaser.io/download/stable
-   1. También, dentro del `index.html` modificar el titulo de la pagina. Por ejemplo: `<title>My Game</title>`
-   1. Ejecutar el proyecto de forma local para ver que este funcionando correctamente. Si no es asi, deberias lograr que corra.
-   1. Una vez que este funcionando correctamente, hacer un commit con el mensaje "Update Phaser version and title".
-   1. Borrar los archivos dentro de la carpeta `/assets` y empezar a desarrollar.
-1. Por ultimo, una buena practica es: modificar este README.md, poner información relevante de tu juego, imagenes, videos, etc, y luego hacer un commit con el mensaje "Customize README.md".
+## Cómo correrlo
+
+Abrir `index.html` con un servidor local (por ejemplo Live Server de VS Code, puerto 5501).
+
+## Estructura
+
+- `scenes/Preload.js`: carga de assets y animaciones.
+- `scenes/Menu.js`: menú con la premisa, instrucciones y botón Jugar.
+- `scenes/Game.js`: escena de juego.
+- `public/assets/tilemap/map.json`: mapa de Tiled (capas Fondo, Montanas, Decoracion, Plataformas y Objetos).
+- `public/assets/tileset.png`: tileset de 24x24 con el escenario y las figuras.
+- `tools/generar-assets.mjs`: script que genera el tileset, el sprite del ninja, los sonidos y el mapa (`node tools/generar-assets.mjs`).
+
+## Uso de Tiled
+
+- Las plataformas colisionan por la propiedad `esColisionable` de sus tiles.
+- Las figuras que caen son tiles del tileset con las propiedades `tipo` y `color`.
+- En la capa de objetos `Objetos` están el punto de aparición del jugador (`player`) y el rectángulo desde donde caen las figuras (`zonaCaida`).
