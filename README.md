@@ -7,7 +7,7 @@ Enkei Kiiro, el último guerrero del clan ninja Moncho, debe defender su pueblo 
 ## Cómo jugar
 
 - `←` `→` moverse, `↑` saltar, `R` reiniciar.
-- Cada 0,5 segundos cae al azar un cuadrado (10 pts), un triángulo (15 pts) o un rombo (20 pts).
+- Caen cuadrados (10 pts), triángulos (15 pts), rombos (20 pts) y asteroides rojos (−15 pts) cada 0,5 segundos.
 - Cada rebote en el piso o en una plataforma le resta 5 puntos a la figura; si llega a 0, desaparece.
 - **Ganás** si superás los 100 puntos habiendo juntado al menos 2 figuras de cada tipo.
 - **Perdés** si se terminan los 60 segundos.

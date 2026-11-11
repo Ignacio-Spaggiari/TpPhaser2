@@ -37,6 +37,9 @@ export default class Game extends Phaser.Scene {
     this.figuras = Object.entries(tileset.tileProperties)
       .filter(([, props]) => props.tipo)
       .map(([id, props]) => ({ frame: Number(id), ...props }));
+    this.figurasBuenas = this.figuras.filter((fig) => fig.puntos > 0);
+    // las figuras buenas salen el doble de seguido que el asteroide maldito
+    this.bolsaDeFiguras = this.figuras.flatMap((fig) => (fig.puntos > 0 ? [fig, fig] : [fig]));
 
     // Find in the Object Layer, the name "player" and get position
     const spawnPoint = map.findObject("Objetos", (obj) => obj.name === "player");
@@ -110,7 +113,7 @@ export default class Game extends Phaser.Scene {
 
     // contador de cada figura que hace falta para ganar
     this.contadores = {};
-    this.figuras.forEach((fig, i) => {
+    this.figurasBuenas.forEach((fig, i) => {
       const x = width / 2 - 90 + i * 80;
       this.add.image(x, 28, "tiles", fig.frame).setDepth(10);
       this.contadores[fig.tipo] = texto(this, x + 16, 28, `0/${MINIMO_POR_TIPO}`, {
@@ -123,7 +126,7 @@ export default class Game extends Phaser.Scene {
   }
 
   crearItem() {
-    const fig = Phaser.Utils.Array.GetRandom(this.figuras);
+    const fig = Phaser.Utils.Array.GetRandom(this.bolsaDeFiguras);
     const x = Phaser.Math.Between(this.zonaCaida.x, this.zonaCaida.x + this.zonaCaida.width);
     const y = Phaser.Math.Between(this.zonaCaida.y, this.zonaCaida.y + this.zonaCaida.height);
 
@@ -147,12 +150,13 @@ export default class Game extends Phaser.Scene {
     if (!item.body.blocked.down || !item.getData("puedeRebotar")) return;
     item.setData("puedeRebotar", false);
 
-    // en cada rebote la figura vale 5 puntos menos
-    const nuevos = item.getData("puntos") - DESCUENTO_REBOTE;
+    // en cada rebote la figura vale 5 puntos menos (para el asteroide, 5 puntos menos de castigo)
+    const puntos = item.getData("puntos");
+    const nuevos = puntos - DESCUENTO_REBOTE * Math.sign(puntos);
     item.setData("puntos", nuevos);
     item.etiqueta.setText(nuevos);
 
-    if (nuevos <= 0) {
+    if (nuevos === 0) {
       this.desaparecerItem(item);
     } else {
       this.sound.play("rebote", { volume: 0.25 });
@@ -175,11 +179,12 @@ export default class Game extends Phaser.Scene {
     const puntos = item.getData("puntos");
 
     this.recolectados.push(item.getData("tipo"));
-    this.score += puntos;
+    this.score = Math.max(0, this.score + puntos);
     this.scoreText.setText(`Puntos: ${this.score}`);
-    this.sound.play("recolectar", { volume: 0.6 });
+    this.sound.play(puntos > 0 ? "recolectar" : "malo", { volume: 0.6 });
 
-    this.textoFlotante(item.x, item.y, `+${puntos}`, item.getData("color"));
+    if (puntos < 0) this.cameras.main.shake(150, 0.01);
+    this.textoFlotante(item.x, item.y, puntos > 0 ? `+${puntos}` : `${puntos}`, item.getData("color"));
     item.destroy();
 
     this.actualizarContadores();
@@ -199,7 +204,7 @@ export default class Game extends Phaser.Scene {
 
   actualizarContadores() {
     const conteo = this.contarRecolectados();
-    this.figuras.forEach(({ tipo }) => {
+    this.figurasBuenas.forEach(({ tipo }) => {
       const cantidad = conteo[tipo] ?? 0;
       this.contadores[tipo].setText(`${cantidad}/${MINIMO_POR_TIPO}`);
       this.contadores[tipo].setColor(cantidad >= MINIMO_POR_TIPO ? "#7dff7d" : "#ffffff");
@@ -209,7 +214,7 @@ export default class Game extends Phaser.Scene {
   // Se verifica cada vez que se recolecta una figura
   verificarVictoria() {
     const conteo = this.contarRecolectados();
-    const tieneTodasLasFiguras = this.figuras.every(({ tipo }) => (conteo[tipo] ?? 0) >= MINIMO_POR_TIPO);
+    const tieneTodasLasFiguras = this.figurasBuenas.every(({ tipo }) => (conteo[tipo] ?? 0) >= MINIMO_POR_TIPO);
 
     if (tieneTodasLasFiguras && this.score > PUNTAJE_PARA_GANAR) {
       this.terminar(true);

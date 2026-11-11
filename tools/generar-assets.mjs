@@ -516,6 +516,7 @@ const mapa = {
         figura(24, "cuadrado", 10, "#3fa7f5"),
         figura(25, "triangulo", 15, "#5ad15a"),
         figura(26, "rombo", 20, "#ffc93c"),
+        figura(27, "malo", -15, "#d43a4a"),
       ],
       tilewidth: T,
     },

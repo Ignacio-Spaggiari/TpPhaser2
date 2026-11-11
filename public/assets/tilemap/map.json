@@ -3849,6 +3849,26 @@
        "value": "rombo"
       }
      ]
+    },
+    {
+     "id": 27,
+     "properties": [
+      {
+       "name": "color",
+       "type": "string",
+       "value": "#d43a4a"
+      },
+      {
+       "name": "puntos",
+       "type": "int",
+       "value": -15
+      },
+      {
+       "name": "tipo",
+       "type": "string",
+       "value": "malo"
+      }
+     ]
     }
    ],
    "tilewidth": 24

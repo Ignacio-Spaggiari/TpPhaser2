@@ -29,7 +29,7 @@ export default class Menu extends Phaser.Scene {
       440,
       "← → moverse    ↑ saltar\n" +
         "Superá los 100 puntos juntando al menos 2 de cada figura\n" +
-        "antes de que se acabe el tiempo.\n" +
+        "antes de que se acabe el tiempo. ¡Evitá los asteroides rojos!\n" +
         "Cada rebote en el piso le resta 5 puntos a la figura.",
       { fontSize: "16px", align: "center", strokeThickness: 4, lineSpacing: 6 }
     ).setOrigin(0.5);
