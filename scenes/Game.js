@@ -1,6 +1,7 @@
 // URL to explain PHASER scene: https://rexrainbow.github.io/phaser3-rex-notes/docs/site/scene/
 import { texto } from "./ui.js";
 
+const TIEMPO_PARTIDA = 60; // segundos (Mejora 1)
 const INTERVALO_CAIDA = 1000; // ms entre cada figura
 const MINIMO_POR_TIPO = 2;
 
@@ -10,6 +11,7 @@ export default class Game extends Phaser.Scene {
   }
 
   init() {
+    this.tiempoRestante = TIEMPO_PARTIDA;
     // cada figura recolectada se guarda en este array
     this.recolectados = [];
     this.terminado = false;
@@ -59,6 +61,8 @@ export default class Game extends Phaser.Scene {
       this.time.addEvent({ delay: INTERVALO_CAIDA, loop: true, callback: this.crearItem, callbackScope: this });
     });
 
+    this.time.addEvent({ delay: 1000, loop: true, callback: this.descontarTiempo, callbackScope: this });
+
     this.crearHud();
   }
 
@@ -92,6 +96,7 @@ export default class Game extends Phaser.Scene {
 
     // franja de fondo para que las figuras que caen no tapen el HUD
     this.add.rectangle(0, 0, width, 56, 0x1d1b2e, 0.6).setOrigin(0).setDepth(10);
+    this.timerText = texto(this, width - 16, 12, `⏱ ${this.tiempoRestante}`).setOrigin(1, 0).setDepth(10);
 
     // contador de cada figura que hace falta para ganar
     this.contadores = {};
@@ -154,7 +159,19 @@ export default class Game extends Phaser.Scene {
     }
   }
 
-  terminar(gano) {
+  descontarTiempo() {
+    if (this.terminado) return;
+
+    this.tiempoRestante--;
+    this.timerText.setText(`⏱ ${this.tiempoRestante}`);
+    if (this.tiempoRestante <= 10) this.timerText.setColor("#ff6b6b");
+
+    if (this.tiempoRestante <= 0) {
+      this.terminar(false, "¡Se acabó el tiempo!");
+    }
+  }
+
+  terminar(gano, motivo = "") {
     if (this.terminado) return;
     this.terminado = true;
 
@@ -172,7 +189,7 @@ export default class Game extends Phaser.Scene {
     })
       .setOrigin(0.5)
       .setDepth(20);
-    texto(this, width / 2, height / 2 + 50, "Presioná R para volver a jugar", { fontSize: "20px" })
+    texto(this, width / 2, height / 2 + 50, `${motivo}\nPresioná R para volver a jugar`, { fontSize: "20px", align: "center" })
       .setOrigin(0.5)
       .setDepth(20);
   }

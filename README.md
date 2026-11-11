@@ -9,6 +9,7 @@ Enkei Kiiro, el último guerrero del clan ninja Moncho, debe defender su pueblo 
 - `←` `→` moverse, `↑` saltar, `R` reiniciar.
 - Cada segundo cae un cuadrado, un triángulo o un rombo al azar.
 - **Ganás** cuando juntás al menos 2 figuras de cada tipo.
+- **Perdés** si se terminan los 60 segundos.
 
 ## Cómo correrlo
 
